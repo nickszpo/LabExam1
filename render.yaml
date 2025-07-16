@@ -4,8 +4,12 @@ services:
     env: php
     buildCommand: |
       docker build -t labexam1 .
-      docker run --rm -v $(pwd):/var/www/html -w /var/www/html labexam1 composer install --no-interaction --optimize-autoloader --no-dev
-    runCommand: docker run -p 10000:80 labexam1
+    runCommand: |
+      php artisan config:cache && \
+      php artisan route:cache && \
+      php artisan view:cache && \
+      php artisan migrate --force && \
+      apache2-foreground
     envVars:
       - key: APP_ENV
         value: production
