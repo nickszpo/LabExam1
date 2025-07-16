@@ -20,14 +20,20 @@ RUN a2enmod rewrite
 # Set working directory
 WORKDIR /var/www/html
 
-# Copy existing application directory contents
-COPY . /var/www/html
+# Copy composer files first to leverage Docker cache
+COPY composer.json composer.lock* /var/www/html/
 
 # Install Composer
-COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
-# Install PHP dependencies
-RUN composer install --no-interaction --optimize-autoloader --no-dev
+# Install PHP dependencies (no scripts to avoid post-install issues)
+RUN composer install --no-scripts --no-autoloader --no-interaction --no-dev
+
+# Copy the rest of the application
+COPY . /var/www/html/
+
+# Generate optimized autoloader
+RUN composer dump-autoload --optimize --no-dev
 
 # Set permissions
 RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
