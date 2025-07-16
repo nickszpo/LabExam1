@@ -1,0 +1,46 @@
+services:
+  - type: web
+    name: labexam1
+    env: php
+    build:
+      dockerfile: Dockerfile
+    envVars:
+      - key: APP_ENV
+        value: production
+      - key: APP_DEBUG
+        value: false
+      - key: APP_KEY
+        generateValue: true
+      - key: APP_URL
+        fromService:
+          name: labexam1
+          property: url
+      - key: DB_CONNECTION
+        value: pgsql
+      - key: DB_HOST
+        fromService:
+          type: postgres
+          name: labexam1-db
+          property: connectionString
+          envVarName: DATABASE_URL
+      - key: DB_PORT
+        value: 5432
+      - key: DB_DATABASE
+        fromService:
+          type: postgres
+          name: labexam1-db
+          property: databaseName
+    autoDeploy: true
+    plan: free
+    numInstances: 1
+    healthCheckPath: /
+    routes:
+      - type: custom_domain
+        name: your-custom-domain.com  # Replace with your custom domain if you have one
+        wildcard: false
+
+databases:
+  - name: labexam1-db
+    databaseName: labexam1
+    user: labexam1_user
+    plan: free
