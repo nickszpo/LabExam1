@@ -17,20 +17,17 @@ RUN apt-get update && apt-get install -y \
 # Enable Apache modules
 RUN a2enmod rewrite
 
+# Install Composer
+COPY --from=composer:2.2 /usr/bin/composer /usr/bin/composer
+
 # Set working directory
 WORKDIR /var/www/html
 
-# Copy composer files first to leverage Docker cache
-COPY composer.json composer.lock* /var/www/html/
+# Copy application files
+COPY . .
 
-# Install Composer
-COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
-
-# Install PHP dependencies (no scripts to avoid post-install issues)
-RUN composer install --no-scripts --no-autoloader --no-interaction --no-dev
-
-# Copy the rest of the application
-COPY . /var/www/html/
+# Install dependencies (no dev dependencies)
+RUN composer install --no-interaction --optimize-autoloader --no-dev --no-scripts
 
 # Generate optimized autoloader
 RUN composer dump-autoload --optimize --no-dev
@@ -39,7 +36,7 @@ RUN composer dump-autoload --optimize --no-dev
 RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
 RUN chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache
 
-# Environment variables
+# Set Apache document root
 ENV APACHE_DOCUMENT_ROOT /var/www/html/public
 RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/sites-available/*.conf
 RUN sed -ri -e 's!/var/www/!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/apache2.conf /etc/apache2/conf-available/*.conf

@@ -2,8 +2,10 @@ services:
   - type: web
     name: labexam1
     env: php
-    build:
-      dockerfile: Dockerfile
+    buildCommand: |
+      docker build -t labexam1 .
+      docker run --rm -v $(pwd):/var/www/html -w /var/www/html labexam1 composer install --no-interaction --optimize-autoloader --no-dev
+    runCommand: docker run -p 10000:80 labexam1
     envVars:
       - key: APP_ENV
         value: production
@@ -21,8 +23,7 @@ services:
         fromService:
           type: postgres
           name: labexam1-db
-          property: connectionString
-          envVarName: DATABASE_URL
+          property: connectionString.host
       - key: DB_PORT
         value: 5432
       - key: DB_DATABASE
@@ -30,16 +31,23 @@ services:
           type: postgres
           name: labexam1-db
           property: databaseName
+      - key: DB_USERNAME
+        fromService:
+          type: postgres
+          name: labexam1-db
+          property: databaseUser
+      - key: DB_PASSWORD
+        fromService:
+          type: postgres
+          name: labexam1-db
+          property: databasePassword
     autoDeploy: true
     plan: free
     numInstances: 1
     healthCheckPath: /
-    routes:
-      - type: custom_domain
-        name: your-custom-domain.com  # Replace with your custom domain if you have one
-        wildcard: false
 
-databases:
+# PostgreSQL Database
+postgres:
   - name: labexam1-db
     databaseName: labexam1
     user: labexam1_user
